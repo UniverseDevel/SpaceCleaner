@@ -1,0 +1,317 @@
+<Window x:Class="SpaceCleaner.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:SpaceCleaner"
+        xmlns:vm="clr-namespace:SpaceCleaner.ViewModels"
+        xmlns:model="clr-namespace:SpaceCleaner.Models"
+        mc:Ignorable="d"
+        d:DataContext="{d:DesignInstance Type=vm:MainViewModel}"
+        Title="SpaceCleaner — Temporary File Reporter"
+        Icon="spacecleaner.ico"
+        Height="720" Width="1120" MinHeight="520" MinWidth="900"
+        WindowStartupLocation="CenterScreen"
+        FontFamily="Segoe UI" FontSize="13" Background="White">
+
+    <Grid Margin="0">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- ============================ Header ============================ -->
+        <Border Grid.Row="0" Background="{StaticResource AccentBrush}" Padding="18,12">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <StackPanel>
+                    <TextBlock Text="SpaceCleaner" Foreground="White" FontSize="20" FontWeight="SemiBold" />
+                    <TextBlock Text="Finds temporary files and caches that are safe to review for removal. Reporting only — nothing is deleted."
+                               Foreground="#DCE8F6" FontSize="12" Margin="0,2,0,0" />
+                </StackPanel>
+                <StackPanel Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Center">
+                    <TextBlock Text="Total reclaimable" Foreground="#DCE8F6" FontSize="11"
+                               HorizontalAlignment="Right" />
+                    <TextBlock Text="{Binding TotalReclaimableText}" Foreground="White"
+                               FontSize="22" FontWeight="Bold" HorizontalAlignment="Right" />
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- ============================ Body ============================ -->
+        <Grid Grid.Row="1" Margin="12">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="340" MinWidth="280" />
+                <ColumnDefinition Width="6" />
+                <ColumnDefinition Width="*" MinWidth="380" />
+            </Grid.ColumnDefinitions>
+
+            <!-- Left: drive selection + progress -->
+            <Border Grid.Column="0" Background="{StaticResource PanelBrush}"
+                    BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="6">
+                <Grid Margin="12">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <DockPanel Grid.Row="0" LastChildFill="False">
+                        <TextBlock Text="Drives to scan" FontWeight="SemiBold" FontSize="14"
+                                   DockPanel.Dock="Left" VerticalAlignment="Center" />
+                        <Button Content="↻ Refresh" DockPanel.Dock="Right" Padding="8,3"
+                                Command="{Binding RefreshDrivesCommand}"
+                                ToolTip="Re-detect available drives" />
+                    </DockPanel>
+
+                    <ItemsControl Grid.Row="1" ItemsSource="{Binding Drives}" Margin="0,8,0,0">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate DataType="{x:Type model:DriveItem}">
+                                <Border Background="White" BorderBrush="{StaticResource BorderBrush}"
+                                        BorderThickness="1" CornerRadius="4" Padding="8,6" Margin="0,0,0,6">
+                                    <CheckBox IsChecked="{Binding IsSelected}" VerticalContentAlignment="Center">
+                                        <StackPanel Margin="4,0,0,0">
+                                            <TextBlock Text="{Binding DisplayName}" FontWeight="SemiBold" />
+                                            <TextBlock Text="{Binding SpaceSummary}" Style="{StaticResource Muted}"
+                                                       FontSize="11" />
+                                        </StackPanel>
+                                    </CheckBox>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <StackPanel Grid.Row="2" Margin="0,6,0,0">
+                        <CheckBox Content="Include all user profiles" Margin="0,0,0,8"
+                                  IsChecked="{Binding IncludeAllUserProfiles}"
+                                  ToolTip="Also scan every other account under C:\Users (uses admin rights). Cloud folders are always skipped." />
+                        <StackPanel Orientation="Horizontal">
+                            <Button Content="Scan" Style="{StaticResource ToolButton}"
+                                    Background="{StaticResource AccentBrush}" Foreground="White" FontWeight="SemiBold"
+                                    Command="{Binding ScanCommand}" />
+                            <Button Content="Cancel" Style="{StaticResource ToolButton}"
+                                    Command="{Binding CancelCommand}" />
+                        </StackPanel>
+                    </StackPanel>
+
+                    <Separator Grid.Row="3" Margin="0,14,0,10" />
+
+                    <TextBlock Grid.Row="4" Text="Scan progress" FontWeight="SemiBold" FontSize="14" />
+
+                    <ScrollViewer Grid.Row="5" VerticalScrollBarVisibility="Auto" Margin="0,8,0,0">
+                        <ItemsControl ItemsSource="{Binding ScanStatuses}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate DataType="{x:Type model:DriveScanStatus}">
+                                    <Border Background="White" BorderBrush="{StaticResource BorderBrush}"
+                                            BorderThickness="1" CornerRadius="4" Padding="10,8" Margin="0,0,0,8">
+                                        <StackPanel>
+                                            <DockPanel LastChildFill="False">
+                                                <TextBlock Text="{Binding Header}" FontWeight="SemiBold"
+                                                           DockPanel.Dock="Left" />
+                                                <TextBlock Text="{Binding StateText}" Style="{StaticResource Muted}"
+                                                           DockPanel.Dock="Right" FontSize="11" />
+                                            </DockPanel>
+                                            <ProgressBar Height="8" Margin="0,6" Minimum="0" Maximum="100"
+                                                         Value="{Binding ProgressPercent, Mode=OneWay}"
+                                                         IsIndeterminate="{Binding IsIndeterminate}" />
+                                            <DockPanel LastChildFill="True">
+                                                <TextBlock DockPanel.Dock="Right" FontWeight="SemiBold"
+                                                           Foreground="{StaticResource SizeBrush}"
+                                                           Text="{Binding BytesText}" Margin="8,0,0,0" />
+                                                <TextBlock Style="{StaticResource Muted}" FontSize="11"
+                                                           Text="{Binding CurrentPath}"
+                                                           ToolTip="{Binding CurrentPath}" />
+                                            </DockPanel>
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </Grid>
+            </Border>
+
+            <GridSplitter Grid.Column="1" Width="6" HorizontalAlignment="Stretch"
+                          Background="Transparent" ResizeBehavior="PreviousAndNext" />
+
+            <!-- Right: results tree + detail -->
+            <Grid Grid.Column="2">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*" MinHeight="160" />
+                    <RowDefinition Height="6" />
+                    <RowDefinition Height="240" MinHeight="150" />
+                </Grid.RowDefinitions>
+
+                <Border Grid.Row="0" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="6">
+                    <DockPanel>
+                        <Border DockPanel.Dock="Top" Background="{StaticResource PanelBrush}"
+                                BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1" Padding="12,8">
+                            <StackPanel>
+                                <TextBlock Text="Results — largest items first. Sizes roll up into each parent."
+                                           FontWeight="SemiBold" />
+                                <StackPanel Orientation="Horizontal" Margin="0,7,0,0">
+                                    <TextBlock Text="Quick select:" VerticalAlignment="Center" Margin="0,0,8,0"
+                                               Style="{StaticResource Muted}" />
+                                    <Button Content="All" Padding="10,3" Margin="0,0,6,0"
+                                            Command="{Binding SelectAllCommand}"
+                                            ToolTip="Select everything found. Press again to clear." />
+                                    <Button Content="Temp &amp; Logs" Padding="10,3" Margin="0,0,6,0"
+                                            Command="{Binding SelectTempAndLogsCommand}"
+                                            ToolTip="Select temporary files, logs and crash dumps (excludes caches). Press again to clear." />
+                                    <Button Content="Non-redownloadable" Padding="10,3"
+                                            Command="{Binding SelectNonRedownloadableCommand}"
+                                            ToolTip="Select everything except caches that would be re-downloaded on next use. Press again to clear." />
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <Grid>
+                            <TreeView ItemsSource="{Binding Results}" BorderThickness="0"
+                                      SelectedItemChanged="ResultsTree_OnSelectedItemChanged"
+                                      VirtualizingStackPanel.IsVirtualizing="True"
+                                      VirtualizingStackPanel.VirtualizationMode="Recycling"
+                                      ScrollViewer.CanContentScroll="True"
+                                      ScrollViewer.HorizontalScrollBarVisibility="Auto">
+                                <TreeView.ItemContainerStyle>
+                                    <Style TargetType="TreeViewItem">
+                                        <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}" />
+                                        <Setter Property="IsSelected" Value="{Binding IsSelected, Mode=TwoWay}" />
+                                    </Style>
+                                </TreeView.ItemContainerStyle>
+                                <TreeView.ItemTemplate>
+                                    <HierarchicalDataTemplate DataType="{x:Type model:ScanNode}"
+                                                              ItemsSource="{Binding Children}">
+                                        <Grid MinWidth="360" ToolTip="{Binding FullPath}">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <CheckBox Grid.Column="0" Margin="0,0,6,0" VerticalAlignment="Center"
+                                                      IsThreeState="False" IsChecked="{Binding IsChecked, Mode=TwoWay}"
+                                                      ToolTip="Mark this location to select it (for a future cleanup step)." />
+                                            <TextBlock Grid.Column="1" Text="{Binding KindGlyph}" Margin="0,0,6,0" />
+                                            <StackPanel Grid.Column="2" Orientation="Horizontal">
+                                                <TextBlock Text="{Binding Name}">
+                                                    <TextBlock.Style>
+                                                        <Style TargetType="TextBlock">
+                                                            <Setter Property="FontWeight" Value="Normal" />
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsDrive}" Value="True">
+                                                                    <Setter Property="FontWeight" Value="Bold" />
+                                                                </DataTrigger>
+                                                                <DataTrigger Binding="{Binding IsCategory}" Value="True">
+                                                                    <Setter Property="FontWeight" Value="SemiBold" />
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </TextBlock.Style>
+                                                </TextBlock>
+                                                <TextBlock Text="  (aggregated)" Style="{StaticResource Muted}"
+                                                           FontSize="11" VerticalAlignment="Center"
+                                                           Visibility="{Binding ChildrenAggregated, Converter={StaticResource BoolToVisibility}}"
+                                                           ToolTip="Deeper subfolders are summed into this size but not listed individually." />
+                                            </StackPanel>
+                                            <TextBlock Grid.Column="3" Text="{Binding SizeText}" Margin="12,0,8,0"
+                                                       FontWeight="SemiBold" Foreground="{StaticResource SizeBrush}" />
+                                        </Grid>
+                                    </HierarchicalDataTemplate>
+                                </TreeView.ItemTemplate>
+                            </TreeView>
+
+                            <TextBlock Text="No results yet. Choose drives on the left and press Scan."
+                                       Style="{StaticResource Muted}" HorizontalAlignment="Center"
+                                       VerticalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center"
+                                       MaxWidth="320" IsHitTestVisible="False"
+                                       Visibility="{Binding Results.Count, Converter={StaticResource ZeroToVisible}}" />
+                        </Grid>
+                    </DockPanel>
+                </Border>
+
+                <GridSplitter Grid.Row="1" Height="6" HorizontalAlignment="Stretch"
+                              Background="Transparent" ResizeBehavior="PreviousAndNext" />
+
+                <!-- Detail pane -->
+                <Border Grid.Row="2" Background="{StaticResource PanelBrush}"
+                        BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="6">
+                    <Grid Margin="14">
+                        <!-- Placeholder when nothing is selected -->
+                        <TextBlock Text="Select an item in the results to see why it is safe to remove, what it usually contains, and to open it in Explorer."
+                                   Style="{StaticResource Muted}" TextWrapping="Wrap"
+                                   VerticalAlignment="Center" HorizontalAlignment="Center"
+                                   TextAlignment="Center" MaxWidth="420"
+                                   Visibility="{Binding SelectedNode, Converter={StaticResource NullToVisible}}" />
+
+                        <!-- Detail for the selected node -->
+                        <ScrollViewer VerticalScrollBarVisibility="Auto"
+                                      DataContext="{Binding SelectedNode}"
+                                      Visibility="{Binding Converter={StaticResource NullToCollapsed}}">
+                            <StackPanel>
+                                <DockPanel LastChildFill="False">
+                                    <StackPanel DockPanel.Dock="Left">
+                                        <TextBlock Text="{Binding CategoryName}" FontWeight="Bold" FontSize="15" />
+                                        <TextBlock Text="{Binding FullPath}" Style="{StaticResource Muted}"
+                                                   FontSize="11" TextWrapping="Wrap" />
+                                    </StackPanel>
+                                </DockPanel>
+
+                                <WrapPanel Margin="0,8,0,0">
+                                    <Border Background="White" BorderBrush="{StaticResource BorderBrush}"
+                                            BorderThickness="1" CornerRadius="4" Padding="10,5" Margin="0,0,8,8">
+                                        <StackPanel>
+                                            <TextBlock Text="Total size" Style="{StaticResource Muted}" FontSize="10" />
+                                            <TextBlock Text="{Binding SizeText}" FontWeight="Bold"
+                                                       Foreground="{StaticResource SizeBrush}" />
+                                        </StackPanel>
+                                    </Border>
+                                    <Border Background="White" BorderBrush="{StaticResource BorderBrush}"
+                                            BorderThickness="1" CornerRadius="4" Padding="10,5" Margin="0,0,8,8">
+                                        <StackPanel>
+                                            <TextBlock Text="Files directly here" Style="{StaticResource Muted}" FontSize="10" />
+                                            <TextBlock Text="{Binding OwnFileSizeText}" FontWeight="SemiBold" />
+                                        </StackPanel>
+                                    </Border>
+                                    <Button Content="📂 Open in Explorer" VerticalAlignment="Center" Padding="12,6"
+                                            Command="{Binding DataContext.OpenInExplorerCommand,
+                                                       RelativeSource={RelativeSource AncestorType=Window}}"
+                                            CommandParameter="{Binding}" />
+                                </WrapPanel>
+
+                                <TextBlock Text="Why this is safe" FontWeight="SemiBold" Margin="0,10,0,2" />
+                                <TextBlock Text="{Binding WhySafeText}" TextWrapping="Wrap" />
+
+                                <StackPanel Visibility="{Binding TypicalContentsText, Converter={StaticResource NullOrEmptyToCollapsed}}">
+                                    <TextBlock Text="What it usually contains" FontWeight="SemiBold" Margin="0,10,0,2" />
+                                    <TextBlock Text="{Binding TypicalContentsText}" TextWrapping="Wrap" />
+                                </StackPanel>
+
+                                <Border Margin="0,12,0,0" Padding="10,8" CornerRadius="4"
+                                        Background="#FFF6E5" BorderBrush="#F0C36D" BorderThickness="1"
+                                        Visibility="{Binding CautionText, Converter={StaticResource NullOrEmptyToCollapsed}}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="⚠" Margin="0,0,8,0" VerticalAlignment="Top" />
+                                        <TextBlock Text="{Binding CautionText}" TextWrapping="Wrap" />
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </Grid>
+                </Border>
+            </Grid>
+        </Grid>
+
+        <!-- ============================ Status bar ============================ -->
+        <Border Grid.Row="2" Background="{StaticResource PanelBrush}"
+                BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0" Padding="14,6">
+            <TextBlock Text="{Binding StatusMessage}" Style="{StaticResource Muted}" />
+        </Border>
+    </Grid>
+</Window>

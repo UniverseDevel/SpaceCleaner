@@ -1,0 +1,24 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>WinExe</OutputType>
+        <TargetFramework>net9.0-windows</TargetFramework>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <UseWPF>true</UseWPF>
+        <LangVersion>latest</LangVersion>
+        <AssemblyTitle>SpaceCleaner</AssemblyTitle>
+        <Product>SpaceCleaner</Product>
+        <Version>0.1.0</Version>
+        <!-- Always launch elevated; see app.manifest. -->
+        <ApplicationManifest>app.manifest</ApplicationManifest>
+        <!-- Broom icon, embedded into the exe (Win32 icon). -->
+        <ApplicationIcon>spacecleaner.ico</ApplicationIcon>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <!-- Also bundled as a WPF resource so the window can show it (see MainWindow Icon). -->
+        <Resource Include="spacecleaner.ico" />
+    </ItemGroup>
+
+</Project>
