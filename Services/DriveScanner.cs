@@ -130,6 +130,7 @@ public sealed class DriveScanner
                 Category = category,
                 OwnFileSize = 0,
                 Size = members.Sum(m => m.Node.Size),
+                IsGroupRoot = true,
             };
 
             foreach (var (target, node) in members.OrderByDescending(m => m.Node.Size))

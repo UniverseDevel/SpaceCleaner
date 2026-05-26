@@ -1,7 +1,9 @@
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
+using System.Windows;
 using System.Windows.Input;
+using System.Windows.Threading;
 using SpaceCleaner.Infrastructure;
 using SpaceCleaner.Models;
 using SpaceCleaner.Services;
@@ -29,8 +31,22 @@ public sealed class MainViewModel : ObservableObject
             _ => HasResults);
         SelectNonRedownloadableCommand = new RelayCommand(
             _ => TogglePreset(c => !c.Redownloads), _ => HasResults);
+        SelectRedownloadableCommand = new RelayCommand(
+            _ => TogglePreset(c => c.Redownloads), _ => HasResults);
+        SelectSafeCommand = new RelayCommand(
+            _ => TogglePreset(c => c.SafetyLevel == SafetyLevel.Safe), _ => HasResults);
+        SelectCautionCommand = new RelayCommand(
+            _ => TogglePreset(c => c.SafetyLevel == SafetyLevel.Caution), _ => HasResults);
+        SelectReviewCommand = new RelayCommand(
+            _ => TogglePreset(c => c.SafetyLevel == SafetyLevel.Review), _ => HasResults);
 
-        Results.CollectionChanged += (_, _) => OnPropertyChanged(nameof(HasResults));
+        Results.CollectionChanged += (_, _) =>
+        {
+            OnPropertyChanged(nameof(HasResults));
+            ScheduleSelectionRecompute();
+            CommandManager.InvalidateRequerySuggested();
+        };
+        ScanNode.AnyIsCheckedChanged += ScheduleSelectionRecompute;
 
         LoadDrives();
     }
@@ -46,6 +62,10 @@ public sealed class MainViewModel : ObservableObject
     public ICommand SelectAllCommand { get; }
     public ICommand SelectTempAndLogsCommand { get; }
     public ICommand SelectNonRedownloadableCommand { get; }
+    public ICommand SelectRedownloadableCommand { get; }
+    public ICommand SelectSafeCommand { get; }
+    public ICommand SelectCautionCommand { get; }
+    public ICommand SelectReviewCommand { get; }
 
     public bool HasResults => Results.Count > 0;
 
@@ -56,7 +76,10 @@ public sealed class MainViewModel : ObservableObject
         private set
         {
             if (SetField(ref _isScanning, value))
+            {
                 OnPropertyChanged(nameof(CanScan));
+                CommandManager.InvalidateRequerySuggested();
+            }
         }
     }
 
@@ -83,11 +106,42 @@ public sealed class MainViewModel : ObservableObject
         private set
         {
             if (SetField(ref _totalReclaimable, value))
-                OnPropertyChanged(nameof(TotalReclaimableText));
+                OnPropertyChanged(nameof(HeaderValueText));
         }
     }
 
-    public string TotalReclaimableText => ByteSize.Format(TotalReclaimable);
+    private long _selectedBytes;
+    public long SelectedBytes
+    {
+        get => _selectedBytes;
+        private set
+        {
+            if (SetField(ref _selectedBytes, value))
+                OnPropertyChanged(nameof(HeaderValueText));
+        }
+    }
+
+    private bool _hasSelection;
+    public bool HasSelection
+    {
+        get => _hasSelection;
+        private set
+        {
+            if (SetField(ref _hasSelection, value))
+            {
+                OnPropertyChanged(nameof(HeaderCaption));
+                OnPropertyChanged(nameof(HeaderValueText));
+            }
+        }
+    }
+
+    /// <summary>Header label: switches to "Selected / reclaimable" once anything is checked.</summary>
+    public string HeaderCaption => HasSelection ? "Selected / reclaimable" : "Total reclaimable";
+
+    /// <summary>Header value: "selected / total" when something is checked, otherwise just the total.</summary>
+    public string HeaderValueText => HasSelection
+        ? $"{ByteSize.Format(SelectedBytes)} / {ByteSize.Format(TotalReclaimable)}"
+        : ByteSize.Format(TotalReclaimable);
 
     private string _statusMessage = "Select the drives to scan, then press Scan.";
     public string StatusMessage
@@ -216,6 +270,40 @@ public sealed class MainViewModel : ObservableObject
     {
         _cts?.Cancel();
         StatusMessage = "Cancelling…";
+    }
+
+    // Selection changes can fire many times per click as the tri-state propagates; coalesce them
+    // into a single recompute on the dispatcher.
+    private bool _selectionRecomputeQueued;
+
+    private void ScheduleSelectionRecompute()
+    {
+        if (_selectionRecomputeQueued)
+            return;
+        _selectionRecomputeQueued = true;
+
+        var dispatcher = Application.Current?.Dispatcher;
+        if (dispatcher is null)
+        {
+            _selectionRecomputeQueued = false;
+            RecomputeSelection();
+            return;
+        }
+
+        dispatcher.BeginInvoke(
+            new Action(() =>
+            {
+                _selectionRecomputeQueued = false;
+                RecomputeSelection();
+            }),
+            DispatcherPriority.Background);
+    }
+
+    private void RecomputeSelection()
+    {
+        SelectedBytes = Results.Sum(r => r.SelectedSize);
+        HasSelection = Results.Any(r => r.IsChecked != false);
+        CommandManager.InvalidateRequerySuggested();
     }
 
     /// <summary>The top-level category nodes across all scanned drives.</summary>

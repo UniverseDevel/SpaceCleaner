@@ -11,6 +11,9 @@
         <conv:NullToCollapsedConverter x:Key="NullToCollapsed" />
         <conv:NullToVisibleConverter x:Key="NullToVisible" />
         <conv:ZeroCountToVisibleConverter x:Key="ZeroToVisible" />
+        <conv:SafetyLevelToBrushConverter x:Key="SafetyBrush" />
+        <conv:SafetyLevelToTintConverter x:Key="SafetyTint" />
+        <conv:DepthToIndentConverter x:Key="DepthToIndent" />
         <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
 
         <!-- Palette -->
@@ -21,6 +24,83 @@
         <SolidColorBrush x:Key="MutedBrush" Color="#6B7480" />
         <SolidColorBrush x:Key="SizeBrush" Color="#1F6F43" />
 
+        <!-- Expand/collapse triangle for the results tree. -->
+        <Style TargetType="ToggleButton" x:Key="TreeExpander">
+            <Setter Property="Focusable" Value="False" />
+            <Setter Property="Width" Value="16" />
+            <Setter Property="Height" Value="16" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ToggleButton">
+                        <Border Background="Transparent" Width="16" Height="16">
+                            <Path x:Name="Arrow" Width="7" Height="9" Stretch="Fill" Fill="#9098A2"
+                                  Data="M0,0 L4,4 L0,8 Z" RenderTransformOrigin="0.5,0.5"
+                                  HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="Arrow" Property="Fill" Value="#5A6470" />
+                                <Setter TargetName="Arrow" Property="RenderTransform">
+                                    <Setter.Value>
+                                        <RotateTransform Angle="90" />
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Results tree item: indentation is applied as a left margin (not nested offset columns) so
+             every row spans the same width and trailing columns (the size) line up across all rows. -->
+        <Style TargetType="TreeViewItem" x:Key="ResultTreeItem">
+            <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}" />
+            <Setter Property="IsSelected" Value="{Binding IsSelected, Mode=TwoWay}" />
+            <Setter Property="Padding" Value="0,2" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TreeViewItem">
+                        <StackPanel>
+                            <Border x:Name="Bd" Background="Transparent" Padding="{TemplateBinding Padding}"
+                                    SnapsToDevicePixels="True">
+                                <Grid Margin="{Binding Depth, Converter={StaticResource DepthToIndent}}">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="16" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <ToggleButton x:Name="Expander" Grid.Column="0" Style="{StaticResource TreeExpander}"
+                                                  VerticalAlignment="Center" ClickMode="Press"
+                                                  IsChecked="{Binding IsExpanded, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}" />
+                                    <ContentPresenter x:Name="PART_Header" Grid.Column="1" ContentSource="Header"
+                                                      HorizontalAlignment="Stretch" VerticalAlignment="Center" />
+                                </Grid>
+                            </Border>
+                            <ItemsPresenter x:Name="ItemsHost" />
+                        </StackPanel>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsExpanded" Value="False">
+                                <Setter TargetName="ItemsHost" Property="Visibility" Value="Collapsed" />
+                            </Trigger>
+                            <Trigger Property="HasItems" Value="False">
+                                <Setter TargetName="Expander" Property="Visibility" Value="Hidden" />
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="#CFE3F7" />
+                            </Trigger>
+                            <MultiTrigger>
+                                <MultiTrigger.Conditions>
+                                    <Condition Property="IsSelected" Value="False" />
+                                    <Condition Property="IsMouseOver" Value="True" />
+                                </MultiTrigger.Conditions>
+                                <Setter TargetName="Bd" Property="Background" Value="#EEF4FB" />
+                            </MultiTrigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
         <Style TargetType="TextBlock" x:Key="Muted">
             <Setter Property="Foreground" Value="{StaticResource MutedBrush}" />
             <Setter Property="TextTrimming" Value="CharacterEllipsis" />
@@ -30,6 +110,41 @@
             <Setter Property="Padding" Value="14,7" />
             <Setter Property="Margin" Value="0,0,8,0" />
             <Setter Property="MinWidth" Value="90" />
+        </Style>
+
+        <!-- Accent (primary) button with a readable hover: text turns dark on the light hover fill. -->
+        <Style TargetType="Button" x:Key="PrimaryButton">
+            <Setter Property="Background" Value="{StaticResource AccentBrush}" />
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Padding" Value="14,7" />
+            <Setter Property="MinWidth" Value="90" />
+            <Setter Property="Margin" Value="0,0,8,0" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="bd" CornerRadius="4" SnapsToDevicePixels="True"
+                                Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}"
+                                TextElement.Foreground="{TemplateBinding Foreground}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="#DCEBFB" />
+                                <Setter Property="Foreground" Value="#10243A" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="#1F5FA8" />
+                                <Setter Property="Foreground" Value="White" />
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="bd" Property="Opacity" Value="0.5" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
     </Application.Resources>
 </Application>

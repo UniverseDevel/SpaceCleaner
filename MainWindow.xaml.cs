@@ -1,6 +1,7 @@
 using System.Windows;
 using System.Windows.Controls;
 using SpaceCleaner.Models;
+using SpaceCleaner.Services;
 using SpaceCleaner.ViewModels;
 
 namespace SpaceCleaner;
@@ -22,5 +23,17 @@ public partial class MainWindow : Window
     {
         if (DataContext is MainViewModel vm)
             vm.SelectedNode = e.NewValue as ScanNode;
+    }
+
+    private void ViewSelectedFiles_OnClick(object sender, RoutedEventArgs e)
+    {
+        if (DataContext is not MainViewModel vm)
+            return;
+
+        var roots = SelectedFilesExporter.CollectRoots(vm.Results);
+        if (roots.Count == 0)
+            return;
+
+        new FileListWindow(roots) { Owner = this }.Show();
     }
 }

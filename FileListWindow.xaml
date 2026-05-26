@@ -1,0 +1,37 @@
+<Window x:Class="SpaceCleaner.FileListWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Selected files" Height="620" Width="960" MinHeight="320" MinWidth="560"
+        Icon="spacecleaner.ico" WindowStartupLocation="CenterOwner"
+        FontFamily="Segoe UI" FontSize="13" Background="White">
+    <DockPanel>
+        <Border DockPanel.Dock="Top" Background="{StaticResource PanelBrush}"
+                BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1" Padding="12,8">
+            <DockPanel>
+                <Button DockPanel.Dock="Right" Content="💾 Save as CSV…" Padding="12,5"
+                        Click="SaveCsv_OnClick" IsEnabled="False" x:Name="SaveButton"
+                        ToolTip="Save this list to a CSV file." />
+                <TextBlock x:Name="Summary" Text="Listing files…" FontWeight="SemiBold"
+                           VerticalAlignment="Center" />
+            </DockPanel>
+        </Border>
+
+        <Grid>
+            <DataGrid x:Name="Grid" AutoGenerateColumns="False" IsReadOnly="True"
+                      CanUserAddRows="False" CanUserDeleteRows="False" SelectionMode="Extended"
+                      GridLinesVisibility="Horizontal" HeadersVisibility="Column"
+                      BorderThickness="0" RowHeaderWidth="0"
+                      EnableRowVirtualization="True" EnableColumnVirtualization="True"
+                      MouseDoubleClick="Grid_OnDoubleClick">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Size" Binding="{Binding SizeText}" SortMemberPath="Size"
+                                        Width="120" />
+                    <DataGridTextColumn Header="Full path" Binding="{Binding Path}" Width="*" />
+                </DataGrid.Columns>
+            </DataGrid>
+
+            <TextBlock x:Name="Loading" Text="Listing files…" HorizontalAlignment="Center"
+                       VerticalAlignment="Center" Foreground="#6B7480" />
+        </Grid>
+    </DockPanel>
+</Window>

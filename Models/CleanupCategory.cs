@@ -1,5 +1,18 @@
 namespace SpaceCleaner.Models;
 
+/// <summary>How safe a location is to remove, from the user's point of view.</summary>
+public enum SafetyLevel
+{
+    /// <summary>Regenerated automatically; removing it has no real downside.</summary>
+    Safe,
+
+    /// <summary>Fine to remove, but it will be re-downloaded or rebuilt, which costs time/bandwidth.</summary>
+    Caution,
+
+    /// <summary>May contain data you want, or affect system rollback — look before removing.</summary>
+    Review,
+}
+
 /// <summary>Broad nature of a location, used to drive the quick-selection presets.</summary>
 public enum CategoryKind
 {
@@ -55,6 +68,56 @@ public sealed class CleanupCategory
     /// internet on next use (package/installer caches, update downloads). Drives the
     /// "non-redownloadable" preset.</summary>
     public bool Redownloads { get; init; }
+
+    /// <summary>Optional explicit safety rating. When unset, <see cref="SafetyLevel"/> is derived.</summary>
+    public SafetyLevel? SafetyLevelOverride { get; init; }
+
+    /// <summary>
+    /// How safe this location is to remove. Derived from its nature unless explicitly overridden:
+    /// Recycle Bin and Windows upgrade leftovers are <see cref="SafetyLevel.Review"/>; anything that
+    /// re-downloads, is an installer cache, or carries a caution is <see cref="SafetyLevel.Caution"/>;
+    /// everything else regenerates freely and is <see cref="SafetyLevel.Safe"/>.
+    /// </summary>
+    public SafetyLevel SafetyLevel => SafetyLevelOverride ?? (
+        Kind is CategoryKind.RecycleBin or CategoryKind.UpgradeLeftovers
+            ? SafetyLevel.Review
+            : Redownloads || Kind == CategoryKind.Installer || Caution is not null
+                ? SafetyLevel.Caution
+                : SafetyLevel.Safe);
+
+    /// <summary>One line explaining <i>why</i> this location got its safety rating.</summary>
+    public string SafetyRationale => SafetyLevel switch
+    {
+        SafetyLevel.Safe =>
+            "Everything here is recreated automatically, so removing it has no lasting effect.",
+        SafetyLevel.Caution when Redownloads =>
+            "Removing this is harmless in itself, but the contents will be downloaded again from the " +
+            "internet the next time they are needed.",
+        SafetyLevel.Caution =>
+            "Removing this is harmless in itself, but the contents will be rebuilt the next time they " +
+            "are needed, which can take time.",
+        SafetyLevel.Review =>
+            "This can hold things you may still want, or affect your ability to undo a recent Windows " +
+            "change, so it is worth a look before removing.",
+        _ => string.Empty,
+    };
+
+    /// <summary>What could actually go wrong if this location is removed. Uses the category-specific
+    /// caution when there is one, otherwise a sensible default for the rating.</summary>
+    public string PotentialRisks => Caution ?? SafetyLevel switch
+    {
+        SafetyLevel.Safe =>
+            "None of note. At most, a brief one-time regeneration the next time the data is needed.",
+        SafetyLevel.Caution when Redownloads =>
+            "Re-downloading the cleared data uses time and bandwidth — for example, the next build or " +
+            "install will be slower.",
+        SafetyLevel.Caution =>
+            "The cleared data has to be rebuilt, which can make the next use slower.",
+        SafetyLevel.Review =>
+            "Removal may be irreversible and could delete files you still need or prevent rolling back " +
+            "a Windows update. Check the contents first.",
+        _ => string.Empty,
+    };
 
     public required CategoryScope Scope { get; init; }
 

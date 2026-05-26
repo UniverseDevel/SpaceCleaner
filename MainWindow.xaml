@@ -34,9 +34,9 @@
                                Foreground="#DCE8F6" FontSize="12" Margin="0,2,0,0" />
                 </StackPanel>
                 <StackPanel Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Center">
-                    <TextBlock Text="Total reclaimable" Foreground="#DCE8F6" FontSize="11"
+                    <TextBlock Text="{Binding HeaderCaption}" Foreground="#DCE8F6" FontSize="11"
                                HorizontalAlignment="Right" />
-                    <TextBlock Text="{Binding TotalReclaimableText}" Foreground="White"
+                    <TextBlock Text="{Binding HeaderValueText}" Foreground="White"
                                FontSize="22" FontWeight="Bold" HorizontalAlignment="Right" />
                 </StackPanel>
             </Grid>
@@ -93,8 +93,7 @@
                                   IsChecked="{Binding IncludeAllUserProfiles}"
                                   ToolTip="Also scan every other account under C:\Users (uses admin rights). Cloud folders are always skipped." />
                         <StackPanel Orientation="Horizontal">
-                            <Button Content="Scan" Style="{StaticResource ToolButton}"
-                                    Background="{StaticResource AccentBrush}" Foreground="White" FontWeight="SemiBold"
+                            <Button Content="Scan" Style="{StaticResource PrimaryButton}"
                                     Command="{Binding ScanCommand}" />
                             <Button Content="Cancel" Style="{StaticResource ToolButton}"
                                     Command="{Binding CancelCommand}" />
@@ -156,51 +155,92 @@
                             <StackPanel>
                                 <TextBlock Text="Results — largest items first. Sizes roll up into each parent."
                                            FontWeight="SemiBold" />
-                                <StackPanel Orientation="Horizontal" Margin="0,7,0,0">
-                                    <TextBlock Text="Quick select:" VerticalAlignment="Center" Margin="0,0,8,0"
+                                <WrapPanel Margin="0,7,0,0">
+                                    <TextBlock Text="Quick select:" VerticalAlignment="Center" Margin="0,4,8,4"
                                                Style="{StaticResource Muted}" />
-                                    <Button Content="All" Padding="10,3" Margin="0,0,6,0"
+                                    <Button Content="All" Padding="10,3" Margin="0,0,6,4"
                                             Command="{Binding SelectAllCommand}"
                                             ToolTip="Select everything found. Press again to clear." />
-                                    <Button Content="Temp &amp; Logs" Padding="10,3" Margin="0,0,6,0"
+                                    <Button Content="Temp &amp; Logs" Padding="8,3" Margin="0,0,12,4"
                                             Command="{Binding SelectTempAndLogsCommand}"
                                             ToolTip="Select temporary files, logs and crash dumps (excludes caches). Press again to clear." />
-                                    <Button Content="Non-redownloadable" Padding="10,3"
+
+                                    <TextBlock Text="By safety:" VerticalAlignment="Center" Margin="0,4,8,4"
+                                               Style="{StaticResource Muted}" />
+                                    <Button Padding="8,3" Margin="0,0,6,4" Command="{Binding SelectSafeCommand}"
+                                            ToolTip="Select locations that regenerate automatically with no downside. Press again to clear.">
+                                        <StackPanel Orientation="Horizontal">
+                                            <Ellipse Width="9" Height="9" Margin="0,0,5,0" VerticalAlignment="Center" Fill="#2E9E5B" />
+                                            <TextBlock Text="Safe" />
+                                        </StackPanel>
+                                    </Button>
+                                    <Button Padding="8,3" Margin="0,0,6,4" Command="{Binding SelectCautionCommand}"
+                                            ToolTip="Select locations that are fine to remove but will be re-downloaded or rebuilt. Press again to clear.">
+                                        <StackPanel Orientation="Horizontal">
+                                            <Ellipse Width="9" Height="9" Margin="0,0,5,0" VerticalAlignment="Center" Fill="#E0922F" />
+                                            <TextBlock Text="Caution" />
+                                        </StackPanel>
+                                    </Button>
+                                    <Button Padding="8,3" Margin="0,0,12,4" Command="{Binding SelectReviewCommand}"
+                                            ToolTip="Select locations that may hold wanted data or affect rollback (Recycle Bin, Windows.old…). Press again to clear.">
+                                        <StackPanel Orientation="Horizontal">
+                                            <Ellipse Width="9" Height="9" Margin="0,0,5,0" VerticalAlignment="Center" Fill="#D6453D" />
+                                            <TextBlock Text="Review" />
+                                        </StackPanel>
+                                    </Button>
+
+                                    <TextBlock Text="By re-download:" VerticalAlignment="Center" Margin="0,4,8,4"
+                                               Style="{StaticResource Muted}" />
+                                    <Button Content="Redownloadable" Padding="8,3" Margin="0,0,6,4"
+                                            Command="{Binding SelectRedownloadableCommand}"
+                                            ToolTip="Select caches that would be re-downloaded from the internet on next use. Press again to clear." />
+                                    <Button Content="Non-redownloadable" Padding="8,3" Margin="0,0,12,4"
                                             Command="{Binding SelectNonRedownloadableCommand}"
                                             ToolTip="Select everything except caches that would be re-downloaded on next use. Press again to clear." />
-                                </StackPanel>
+
+                                    <Button Content="🗔 View selected files" Padding="8,3" Margin="0,0,0,4"
+                                            Click="ViewSelectedFiles_OnClick" IsEnabled="{Binding HasSelection}"
+                                            ToolTip="Open a window listing every file under the checked items (full path + size). You can save it to CSV from there." />
+                                </WrapPanel>
                             </StackPanel>
                         </Border>
 
                         <Grid>
                             <TreeView ItemsSource="{Binding Results}" BorderThickness="0"
                                       SelectedItemChanged="ResultsTree_OnSelectedItemChanged"
+                                      ItemContainerStyle="{StaticResource ResultTreeItem}"
                                       VirtualizingStackPanel.IsVirtualizing="True"
                                       VirtualizingStackPanel.VirtualizationMode="Recycling"
                                       ScrollViewer.CanContentScroll="True"
-                                      ScrollViewer.HorizontalScrollBarVisibility="Auto">
-                                <TreeView.ItemContainerStyle>
-                                    <Style TargetType="TreeViewItem">
-                                        <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}" />
-                                        <Setter Property="IsSelected" Value="{Binding IsSelected, Mode=TwoWay}" />
-                                    </Style>
-                                </TreeView.ItemContainerStyle>
+                                      ScrollViewer.HorizontalScrollBarVisibility="Disabled">
                                 <TreeView.ItemTemplate>
                                     <HierarchicalDataTemplate DataType="{x:Type model:ScanNode}"
                                                               ItemsSource="{Binding Children}">
-                                        <Grid MinWidth="360" ToolTip="{Binding FullPath}">
+                                        <Grid ToolTip="{Binding FullPath}" HorizontalAlignment="Stretch">
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="Auto" />
                                                 <ColumnDefinition Width="Auto" />
-                                                <ColumnDefinition Width="*" />
                                                 <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="120" />
                                             </Grid.ColumnDefinitions>
                                             <CheckBox Grid.Column="0" Margin="0,0,6,0" VerticalAlignment="Center"
                                                       IsThreeState="False" IsChecked="{Binding IsChecked, Mode=TwoWay}"
                                                       ToolTip="Mark this location to select it (for a future cleanup step)." />
-                                            <TextBlock Grid.Column="1" Text="{Binding KindGlyph}" Margin="0,0,6,0" />
-                                            <StackPanel Grid.Column="2" Orientation="Horizontal">
-                                                <TextBlock Text="{Binding Name}">
+                                            <Ellipse Grid.Column="1" Width="9" Height="9" Margin="0,0,6,0"
+                                                     VerticalAlignment="Center"
+                                                     Fill="{Binding SafetyLevel, Converter={StaticResource SafetyBrush}}"
+                                                     Visibility="{Binding ShowSafety, Converter={StaticResource BoolToVisibility}}"
+                                                     ToolTip="{Binding SafetyText}" />
+                                            <TextBlock Grid.Column="2" Text="{Binding KindGlyph}" Margin="0,0,6,0" />
+                                            <DockPanel Grid.Column="3" LastChildFill="True">
+                                                <TextBlock DockPanel.Dock="Right" Text="(aggregated)"
+                                                           Style="{StaticResource Muted}" FontSize="11"
+                                                           VerticalAlignment="Center" Margin="6,0,8,0"
+                                                           Visibility="{Binding ChildrenAggregated, Converter={StaticResource BoolToVisibility}}"
+                                                           ToolTip="Deeper subfolders are summed into this size but not listed individually." />
+                                                <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis"
+                                                           VerticalAlignment="Center">
                                                     <TextBlock.Style>
                                                         <Style TargetType="TextBlock">
                                                             <Setter Property="FontWeight" Value="Normal" />
@@ -215,13 +255,13 @@
                                                         </Style>
                                                     </TextBlock.Style>
                                                 </TextBlock>
-                                                <TextBlock Text="  (aggregated)" Style="{StaticResource Muted}"
-                                                           FontSize="11" VerticalAlignment="Center"
-                                                           Visibility="{Binding ChildrenAggregated, Converter={StaticResource BoolToVisibility}}"
-                                                           ToolTip="Deeper subfolders are summed into this size but not listed individually." />
-                                            </StackPanel>
-                                            <TextBlock Grid.Column="3" Text="{Binding SizeText}" Margin="12,0,8,0"
-                                                       FontWeight="SemiBold" Foreground="{StaticResource SizeBrush}" />
+                                            </DockPanel>
+                                            <Border Grid.Column="4" BorderBrush="{StaticResource BorderBrush}"
+                                                    BorderThickness="1,0,0,0" Padding="12,0,4,0">
+                                                <TextBlock Text="{Binding SizeText}" HorizontalAlignment="Left"
+                                                           VerticalAlignment="Center" FontWeight="SemiBold"
+                                                           Foreground="{StaticResource SizeBrush}" />
+                                            </Border>
                                         </Grid>
                                     </HierarchicalDataTemplate>
                                 </TreeView.ItemTemplate>
@@ -261,7 +301,18 @@
                                         <TextBlock Text="{Binding FullPath}" Style="{StaticResource Muted}"
                                                    FontSize="11" TextWrapping="Wrap" />
                                     </StackPanel>
+                                    <Border DockPanel.Dock="Right" CornerRadius="4" Padding="9,4" VerticalAlignment="Top"
+                                            Background="{Binding SafetyLevel, Converter={StaticResource SafetyBrush}}"
+                                            Visibility="{Binding ShowSafety, Converter={StaticResource BoolToVisibility}}"
+                                            ToolTip="{Binding SafetyBlurb}">
+                                        <TextBlock Text="{Binding SafetyText}" Foreground="White"
+                                                   FontWeight="SemiBold" FontSize="11" />
+                                    </Border>
                                 </DockPanel>
+
+                                <TextBlock Text="{Binding SafetyRationale}" Style="{StaticResource Muted}"
+                                           TextWrapping="Wrap" Margin="0,6,0,0"
+                                           Visibility="{Binding ShowSafety, Converter={StaticResource BoolToVisibility}}" />
 
                                 <WrapPanel Margin="0,8,0,0">
                                     <Border Background="White" BorderBrush="{StaticResource BorderBrush}"
@@ -293,12 +344,17 @@
                                     <TextBlock Text="{Binding TypicalContentsText}" TextWrapping="Wrap" />
                                 </StackPanel>
 
-                                <Border Margin="0,12,0,0" Padding="10,8" CornerRadius="4"
-                                        Background="#FFF6E5" BorderBrush="#F0C36D" BorderThickness="1"
-                                        Visibility="{Binding CautionText, Converter={StaticResource NullOrEmptyToCollapsed}}">
-                                    <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="⚠" Margin="0,0,8,0" VerticalAlignment="Top" />
-                                        <TextBlock Text="{Binding CautionText}" TextWrapping="Wrap" />
+                                <Border Margin="0,12,0,0" Padding="10,8" CornerRadius="4" BorderThickness="1"
+                                        Background="{Binding SafetyLevel, Converter={StaticResource SafetyTint}}"
+                                        BorderBrush="{Binding SafetyLevel, Converter={StaticResource SafetyBrush}}"
+                                        Visibility="{Binding ShowSafety, Converter={StaticResource BoolToVisibility}}">
+                                    <StackPanel>
+                                        <StackPanel Orientation="Horizontal" Margin="0,0,0,3">
+                                            <Ellipse Width="9" Height="9" Margin="0,0,6,0" VerticalAlignment="Center"
+                                                     Fill="{Binding SafetyLevel, Converter={StaticResource SafetyBrush}}" />
+                                            <TextBlock Text="Potential risks" FontWeight="SemiBold" />
+                                        </StackPanel>
+                                        <TextBlock Text="{Binding PotentialRisks}" TextWrapping="Wrap" />
                                     </StackPanel>
                                 </Border>
                             </StackPanel>
