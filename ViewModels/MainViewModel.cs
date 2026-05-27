@@ -143,7 +143,7 @@ public sealed class MainViewModel : ObservableObject
         ? $"{ByteSize.Format(SelectedBytes)} / {ByteSize.Format(TotalReclaimable)}"
         : ByteSize.Format(TotalReclaimable);
 
-    private string _statusMessage = "Select the drives to scan, then press Scan.";
+    private string _statusMessage = "Pick the drives to scan on the left, then press Scan.";
     public string StatusMessage
     {
         get => _statusMessage;
@@ -210,7 +210,9 @@ public sealed class MainViewModel : ObservableObject
 
             StatusMessage = token.IsCancellationRequested
                 ? "Scan cancelled."
-                : $"Scan complete. Found {ByteSize.Format(TotalReclaimable)} that can be reviewed for removal.";
+                : TotalReclaimable > 0
+                    ? $"Scan complete — found {ByteSize.Format(TotalReclaimable)} you can review and reclaim. Tick items, then View or Clean up."
+                    : "Scan complete — nothing reclaimable found in the selected locations.";
         }
         finally
         {

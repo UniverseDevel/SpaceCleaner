@@ -8,7 +8,7 @@
         xmlns:model="clr-namespace:SpaceCleaner.Models"
         mc:Ignorable="d"
         d:DataContext="{d:DesignInstance Type=vm:MainViewModel}"
-        Title="SpaceCleaner — Temporary File Reporter"
+        Title="SpaceCleaner — Reclaim Disk Space"
         Icon="spacecleaner.ico"
         Height="720" Width="1120" MinHeight="520" MinWidth="900"
         WindowStartupLocation="CenterScreen"
@@ -30,7 +30,7 @@
                 </Grid.ColumnDefinitions>
                 <StackPanel>
                     <TextBlock Text="SpaceCleaner" Foreground="White" FontSize="20" FontWeight="SemiBold" />
-                    <TextBlock Text="Finds temporary files and caches that are safe to review for removal. Reporting only — nothing is deleted."
+                    <TextBlock Text="Find temporary files and caches that are safe to remove — review what's found, then reclaim the space."
                                Foreground="#DCE8F6" FontSize="12" Margin="0,2,0,0" />
                 </StackPanel>
                 <StackPanel Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Center">
@@ -68,7 +68,7 @@
                                    DockPanel.Dock="Left" VerticalAlignment="Center" />
                         <Button Content="↻ Refresh" DockPanel.Dock="Right" Padding="8,3"
                                 Command="{Binding RefreshDrivesCommand}"
-                                ToolTip="Re-detect available drives" />
+                                ToolTip="Re-detect connected drives." />
                     </DockPanel>
 
                     <ItemsControl Grid.Row="1" ItemsSource="{Binding Drives}" Margin="0,8,0,0">
@@ -91,7 +91,7 @@
                     <StackPanel Grid.Row="2" Margin="0,6,0,0">
                         <CheckBox Content="Include all user profiles" Margin="0,0,0,8"
                                   IsChecked="{Binding IncludeAllUserProfiles}"
-                                  ToolTip="Also scan every other account under C:\Users (uses admin rights). Cloud folders are always skipped." />
+                                  ToolTip="Also scan every other account under C:\Users, not just yours. Cloud-synced folders are always skipped." />
                         <StackPanel Orientation="Horizontal">
                             <Button Content="Scan" Style="{StaticResource PrimaryButton}"
                                     Command="{Binding ScanCommand}" />
@@ -153,8 +153,8 @@
                         <Border DockPanel.Dock="Top" Background="{StaticResource PanelBrush}"
                                 BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1" Padding="12,8">
                             <StackPanel>
-                                <TextBlock Text="Results — largest items first. Sizes roll up into each parent."
-                                           FontWeight="SemiBold" />
+                                <TextBlock Text="Results — biggest first. Each folder's size includes everything inside it. Tick what you want to act on."
+                                           FontWeight="SemiBold" TextWrapping="Wrap" />
                                 <WrapPanel Margin="0,7,0,0">
                                     <TextBlock Text="Quick select:" VerticalAlignment="Center" Margin="0,4,8,4"
                                                Style="{StaticResource Muted}" />
@@ -198,9 +198,13 @@
                                             Command="{Binding SelectNonRedownloadableCommand}"
                                             ToolTip="Select everything except caches that would be re-downloaded on next use. Press again to clear." />
 
-                                    <Button Content="🗔 View selected files" Padding="8,3" Margin="0,0,0,4"
+                                    <Button Content="🗔 View selected files" Padding="8,3" Margin="0,0,6,4"
                                             Click="ViewSelectedFiles_OnClick" IsEnabled="{Binding HasSelection}"
                                             ToolTip="Open a window listing every file under the checked items (full path + size). You can save it to CSV from there." />
+                                    <Button Content="🗑 Clean up selected…" Style="{StaticResource DangerButton}"
+                                            Padding="10,3" Margin="0,0,0,4"
+                                            Click="CleanupSelected_OnClick" IsEnabled="{Binding HasSelection}"
+                                            ToolTip="Permanently delete the files under the checked items. Files in use or protected are skipped. Writes an audit log next to the app." />
                                 </WrapPanel>
                             </StackPanel>
                         </Border>
@@ -226,7 +230,7 @@
                                             </Grid.ColumnDefinitions>
                                             <CheckBox Grid.Column="0" Margin="0,0,6,0" VerticalAlignment="Center"
                                                       IsThreeState="False" IsChecked="{Binding IsChecked, Mode=TwoWay}"
-                                                      ToolTip="Mark this location to select it (for a future cleanup step)." />
+                                                      ToolTip="Tick to include this location when you view or clean up the selection." />
                                             <Ellipse Grid.Column="1" Width="9" Height="9" Margin="0,0,6,0"
                                                      VerticalAlignment="Center"
                                                      Fill="{Binding SafetyLevel, Converter={StaticResource SafetyBrush}}"
@@ -267,7 +271,7 @@
                                 </TreeView.ItemTemplate>
                             </TreeView>
 
-                            <TextBlock Text="No results yet. Choose drives on the left and press Scan."
+                            <TextBlock Text="Nothing scanned yet. Pick your drives on the left and press Scan."
                                        Style="{StaticResource Muted}" HorizontalAlignment="Center"
                                        VerticalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center"
                                        MaxWidth="320" IsHitTestVisible="False"
@@ -284,7 +288,7 @@
                         BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="6">
                     <Grid Margin="14">
                         <!-- Placeholder when nothing is selected -->
-                        <TextBlock Text="Select an item in the results to see why it is safe to remove, what it usually contains, and to open it in Explorer."
+                        <TextBlock Text="Select an item to see why it's safe to remove, what it typically contains, and its potential risks — or open it in Explorer."
                                    Style="{StaticResource Muted}" TextWrapping="Wrap"
                                    VerticalAlignment="Center" HorizontalAlignment="Center"
                                    TextAlignment="Center" MaxWidth="420"
@@ -326,7 +330,7 @@
                                     <Border Background="White" BorderBrush="{StaticResource BorderBrush}"
                                             BorderThickness="1" CornerRadius="4" Padding="10,5" Margin="0,0,8,8">
                                         <StackPanel>
-                                            <TextBlock Text="Files directly here" Style="{StaticResource Muted}" FontSize="10" />
+                                            <TextBlock Text="Files in this folder" Style="{StaticResource Muted}" FontSize="10" />
                                             <TextBlock Text="{Binding OwnFileSizeText}" FontWeight="SemiBold" />
                                         </StackPanel>
                                     </Border>

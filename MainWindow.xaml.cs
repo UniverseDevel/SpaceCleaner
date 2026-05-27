@@ -36,4 +36,34 @@ public partial class MainWindow : Window
 
         new FileListWindow(roots) { Owner = this }.Show();
     }
+
+    private void CleanupSelected_OnClick(object sender, RoutedEventArgs e)
+    {
+        if (DataContext is not MainViewModel vm)
+            return;
+
+        var roots = SelectedFilesExporter.CollectRoots(vm.Results);
+        if (roots.Count == 0)
+            return;
+
+        var confirm = MessageBox.Show(
+            this,
+            "Permanently delete the files under the selected locations?\n\n" +
+            "Files that are in use or protected will be skipped. This cannot be undone. " +
+            "An audit log of everything removed is written to a 'logs' folder next to the app.",
+            "Confirm cleanup",
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Warning,
+            MessageBoxResult.No);
+        if (confirm != MessageBoxResult.Yes)
+            return;
+
+        void Rescan()
+        {
+            if (vm.ScanCommand.CanExecute(null))
+                vm.ScanCommand.Execute(null);
+        }
+
+        new CleanupWindow(roots, Rescan) { Owner = this }.Show();
+    }
 }

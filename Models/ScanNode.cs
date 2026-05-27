@@ -154,7 +154,7 @@ public sealed class ScanNode : ObservableObject
     public bool IsCategory => Kind == NodeKind.Category;
     public bool IsDrive => Kind == NodeKind.Drive;
 
-    public string CategoryName => Category?.Name ?? "Drive total";
+    public string CategoryName => Category?.Name ?? (Kind == NodeKind.Drive ? $"Drive {Name}" : "Selected location");
 
     /// <summary>Safety rating for this node (inherited from its category). Drive nodes have none.</summary>
     public SafetyLevel SafetyLevel => Category?.SafetyLevel ?? SafetyLevel.Safe;
@@ -185,8 +185,8 @@ public sealed class ScanNode : ObservableObject
     public string PotentialRisks => Category?.PotentialRisks ?? string.Empty;
 
     public string WhySafeText => Category?.WhySafe
-        ?? "Summary for this drive. Each item below is a well-known location whose contents are safe " +
-           "to remove. Expand it to see exactly where the space is and select any folder for details.";
+        ?? "Drive summary. Everything listed under it is a well-known location whose contents are safe " +
+           "to remove. Expand it to see where the space is, and select any folder for details.";
 
     public string TypicalContentsText => Category?.TypicalContents ?? string.Empty;
 

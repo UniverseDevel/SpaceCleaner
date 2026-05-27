@@ -14,6 +14,7 @@
         <conv:SafetyLevelToBrushConverter x:Key="SafetyBrush" />
         <conv:SafetyLevelToTintConverter x:Key="SafetyTint" />
         <conv:DepthToIndentConverter x:Key="DepthToIndent" />
+        <conv:CleanupStatusToBrushConverter x:Key="CleanupStatusBrush" />
         <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
 
         <!-- Palette -->
@@ -23,6 +24,39 @@
         <SolidColorBrush x:Key="BorderBrush" Color="#D9DEE5" />
         <SolidColorBrush x:Key="MutedBrush" Color="#6B7480" />
         <SolidColorBrush x:Key="SizeBrush" Color="#1F6F43" />
+
+        <!-- Destructive (red) button, same readable-hover treatment as PrimaryButton. -->
+        <Style TargetType="Button" x:Key="DangerButton">
+            <Setter Property="Background" Value="#C8403A" />
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Padding" Value="10,4" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="bd" CornerRadius="4" SnapsToDevicePixels="True"
+                                Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}"
+                                TextElement.Foreground="{TemplateBinding Foreground}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="#FBE3E1" />
+                                <Setter Property="Foreground" Value="#7A201C" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="#9E2E29" />
+                                <Setter Property="Foreground" Value="White" />
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="bd" Property="Opacity" Value="0.45" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
 
         <!-- Expand/collapse triangle for the results tree. -->
         <Style TargetType="ToggleButton" x:Key="TreeExpander">

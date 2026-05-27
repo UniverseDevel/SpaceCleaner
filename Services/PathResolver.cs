@@ -50,8 +50,16 @@ public static class PathResolver
 
         foreach (var candidate in ExpandWildcards(resolved))
         {
-            if (Directory.Exists(candidate) && !SafetyGuard.IsForbiddenPath(candidate))
-                yield return Path.TrimEndingDirectorySeparator(candidate);
+            if (!Directory.Exists(candidate) || SafetyGuard.IsForbiddenPath(candidate))
+                continue;
+
+            // Skip junctions/symlinks (anywhere in the path): a link's real content lives elsewhere
+            // and following it could scan or delete files on a drive the user didn't select.
+            var realPath = LinkResolver.GetRealPath(candidate);
+            if (LinkResolver.IsRedirected(candidate, realPath))
+                continue;
+
+            yield return Path.TrimEndingDirectorySeparator(candidate);
         }
     }
 

@@ -34,6 +34,32 @@ public sealed class SafetyLevelToBrushConverter : IValueConverter
         => throw new NotSupportedException();
 }
 
+/// <summary>Colours a cleanup row by its status: green = deleted, red = skipped, grey = pending.</summary>
+public sealed class CleanupStatusToBrushConverter : IValueConverter
+{
+    private static readonly SolidColorBrush Deleted = Frozen(0x2E, 0x9E, 0x5B);
+    private static readonly SolidColorBrush Skipped = Frozen(0xD6, 0x45, 0x3D);
+    private static readonly SolidColorBrush Pending = Frozen(0x9A, 0xA3, 0xAD);
+
+    private static SolidColorBrush Frozen(byte r, byte g, byte b)
+    {
+        var brush = new SolidColorBrush(Color.FromRgb(r, g, b));
+        brush.Freeze();
+        return brush;
+    }
+
+    public object Convert(object value, Type targetType, object? parameter, CultureInfo culture)
+        => value switch
+        {
+            CleanupStatus.Deleted => Deleted,
+            CleanupStatus.Skipped => Skipped,
+            _ => Pending,
+        };
+
+    public object ConvertBack(object value, Type targetType, object? parameter, CultureInfo culture)
+        => throw new NotSupportedException();
+}
+
 /// <summary>Converts a tree depth (int) to a left-indent <see cref="Thickness"/>. Indenting by margin
 /// (rather than nested offset columns) keeps every row the same width, so trailing columns line up.</summary>
 public sealed class DepthToIndentConverter : IValueConverter
